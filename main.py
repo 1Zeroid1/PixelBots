@@ -52,9 +52,17 @@ def send_message_at_time(chat_id, text, hour, minute, day, month, name, message:
 @bot.message_handler(commands=['start'])
 def handle_start(message):
     chat_id = message.chat.id
-    text = "Привет! Я могу отправить напоминалку в нужное Вам время." \
-           " Введите через пробел название Вашей напоминалки, время в формате ЧЧ:ММ (например, 09:00) " \
-           "и дату в формате ДД.ММ (например, 05.12)."
+    text = "Привет! Я могу отправить напоминалку в нужное Вам время.\n" \
+           "Введите /help, чтобы узнать список команд."
+    bot.send_message(chat_id, text)
+
+
+@bot.message_handler(commands=['help'])
+def handle_help(message):
+    chat_id = message.chat.id
+    text = "- Чтобы создать напоминалку введите через пробел /create, название напоминалки," \
+           " время в формате ЧЧ:ММ и дату в формате ДД.ММ.\n\n- Чтобы посмотреть ответы на вашу напоминалку напишите" \
+           " /answers (ответы должны обязательно ссылаться на сообщение бота)."
     bot.send_message(chat_id, text)
 
 
