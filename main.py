@@ -1,60 +1,63 @@
 import telebot
-import time
-import datetime
-from multiprocessing import *
-import schedule
 from telebot import types
+import datetime
+import time
 
 token = '6978321555:AAFLNx50X-t0mPIlHAQRE0GTIC75ioYU2sk'
 bot = telebot.TeleBot(token)
-global USER_ID
-global tm
 
 
-def start_process():  # Запуск Process
-    p1 = Process(target=P_schedule.start_schedule, args=()).start()
+def send_message(chat_id, text):
+    bot.send_message(chat_id, text)
 
 
-class P_schedule():  # Class для работы с schedule
-    def start_schedule():  # Запуск schedule
-        ######Параметры для schedule######
-        schedule.every().day.at(tm).do(P_schedule.send_message1)
-        schedule.every(1).minutes.do(P_schedule.send_message2)
-        ##################################
+def send_message_at_time(chat_id, text, hour, minute, day, month):
+    hour1 = str(hour)
+    minute1 = str(minute)
+    day1 = str(day)
+    month1 = str(month)
+    if len(hour1) < 2:
+        hour1 = "0" + hour1
+    if len(minute1) < 2:
+        minute1 = "0" + minute1
+    if len(day1) < 2:
+        day1 = "0" + day1
+    if len(month1) < 2:
+        month1 = "0" + month1
+    bot.send_message(chat_id, f"Хорошо, я уведомлю Вас в {hour1}:{minute1} {day1}.{month1} о Вашей встрече.")
+    while True:
+        now = datetime.datetime.now()
+        if now.hour == hour and now.minute == minute and now.day == day and now.month == month:
+            send_message(chat_id, text)
+            break
+        time.sleep(60)
 
-        while True:  # Запуск цикла
-            schedule.run_pending()
-            time.sleep(1)
 
-    ####Функции для выполнения заданий по времени
-    def send_message1():
-        bot.send_message(USER_ID, 'Отправка сообщения по времени')
-
-    def send_message2():
-        bot.send_message(USER_ID, 'Отправка сообщения через определенное время')
-    ################
-
-
-###Настройки команд telebot#########
 @bot.message_handler(commands=['start'])
-def start(message):
-    bot.send_message(message.chat.id, 'Нажали start')
-    global USER_ID
-    USER_ID = message.user.id
-    bot.register_next_step_handler(message, timer)
-
-def timer(message):
-    global tm
-    tm = message.text
-    bot.send_message(message.chat.id, 'Ввели время')
+def handle_start(message):
+    chat_id = message.chat.id
+    text = "Привет! Я могу отправить напоминалку в нужное Вам время." \
+           " Введите через пробел название Вашей напоминалки, время в формате ЧЧ:ММ (например, 09:00) " \
+           "и дату в формате ДД.ММ (например, 05.12)."
+    bot.send_message(chat_id, text)
 
 
-#####################
-
-
-if __name__ == '__main__':
-    start_process()
+@bot.message_handler(func=lambda message: True)
+def handle_message(message):
+    chat_id = message.chat.id
+    text = message.text
     try:
-        bot.polling(none_stop=True)
-    except:
-        pass
+        timedate = text.split(' ')
+        name = ""
+        for i in range(len(timedate)-2):
+            name += timedate[i] + " "
+        name = name.rstrip()
+        hour, minute = map(int, timedate[len(timedate)-2].split(':'))
+        day, month = map(int, timedate[len(timedate)-1].split('.'))
+        send_message_at_time(chat_id, f"Ваше напоминание \"{name}\" сработало! Удачи Вам!", hour, minute, day, month)
+    except ValueError:
+        bot.send_message(chat_id, "Неверный формат времени или даты. Введи время в формате ЧЧ:ММ"
+                                  " (например, 09:00) и дату в формате ДД.ММ (например, 05.12).")
+
+
+bot.polling(none_stop=True)
