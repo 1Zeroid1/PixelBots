@@ -5,7 +5,7 @@ import time
 
 from telebot.types import Message
 
-token = '6978321555:AAFLNx50X-t0mPIlHAQRE0GTIC75ioYU2sk'
+token = ''
 bot = telebot.TeleBot(token)
 
 global user_id
