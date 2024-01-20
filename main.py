@@ -3,15 +3,22 @@ from telebot import types
 import datetime
 import time
 
+from telebot.types import Message
+
 token = '6978321555:AAFLNx50X-t0mPIlHAQRE0GTIC75ioYU2sk'
 bot = telebot.TeleBot(token)
+
+global user_id
+reminder = dict()
+global msgid
 
 
 def send_message(chat_id, text):
     bot.send_message(chat_id, text)
 
 
-def send_message_at_time(chat_id, text, hour, minute, day, month):
+def send_message_at_time(chat_id, text, hour, minute, day, month, name, message: Message):
+    global msgid
     hour1 = str(hour)
     minute1 = str(minute)
     day1 = str(day)
@@ -24,11 +31,20 @@ def send_message_at_time(chat_id, text, hour, minute, day, month):
         day1 = "0" + day1
     if len(month1) < 2:
         month1 = "0" + month1
-    bot.send_message(chat_id, f"Хорошо, я уведомлю Вас в {hour1}:{minute1} {day1}.{month1} о Вашей встрече.")
+    msg = bot.send_message(chat_id, f"Хорошо, я уведомлю Вас в {hour1}:{minute1} {day1}.{month1} о Вашей встрече.")
+    msgid = msg.id
+    reminder[msgid] = {'author': message.from_user.id,
+                       'name': name,
+                       'time': f"{hour1}:{minute1}",
+                       'answers': {
+                           message.from_user.username: []
+                       }}
+    print(reminder)
     while True:
         now = datetime.datetime.now()
         if now.hour == hour and now.minute == minute and now.day == day and now.month == month:
             send_message(chat_id, text)
+            del reminder[msg.id]
             break
         time.sleep(60)
 
@@ -42,22 +58,38 @@ def handle_start(message):
     bot.send_message(chat_id, text)
 
 
-@bot.message_handler(func=lambda message: True)
+@bot.message_handler(commands=['create'])
 def handle_message(message):
     chat_id = message.chat.id
     text = message.text
     try:
         timedate = text.split(' ')
         name = ""
-        for i in range(len(timedate)-2):
-            name += timedate[i] + " "
+        for i in range(len(timedate) - 3):
+            name += timedate[i + 1] + " "
         name = name.rstrip()
-        hour, minute = map(int, timedate[len(timedate)-2].split(':'))
-        day, month = map(int, timedate[len(timedate)-1].split('.'))
-        send_message_at_time(chat_id, f"Ваше напоминание \"{name}\" сработало! Удачи Вам!", hour, minute, day, month)
+        hour, minute = map(int, timedate[len(timedate) - 2].split(':'))
+        day, month = map(int, timedate[len(timedate) - 1].split('.'))
+        send_message_at_time(chat_id, f"Ваше напоминание \"{name}\" сработало! Удачи Вам!", hour, minute, day, month,
+                             name, message)
     except ValueError:
         bot.send_message(chat_id, "Неверный формат времени или даты. Введи время в формате ЧЧ:ММ"
                                   " (например, 09:00) и дату в формате ДД.ММ (например, 05.12).")
+
+
+@bot.message_handler(func=lambda msg: msg.reply_to_message and msg.reply_to_message.id in reminder)
+def ans(message):
+    (reminder[msgid]['answers'][message.from_user.username]).append(message.text)
+    print(reminder[msgid]['answers'])
+
+
+@bot.message_handler(commands=['answers'])
+def show_ans(message):
+    answers = ""
+    for i in range(len(reminder[msgid]['answers'][message.from_user.username])):
+        answers += message.from_user.username + ": " + reminder[msgid]['answers'][message.from_user.username][i] + ", "
+    answers.rstrip(', ')
+    bot.send_message(message.chat.id, answers)
 
 
 bot.polling(none_stop=True)
