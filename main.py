@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 import datetime
 import time
-#Hello world
+
 
 from telebot.types import Message
 
