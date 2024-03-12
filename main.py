@@ -97,7 +97,7 @@ def show_ans(msg):
     if idi in reminder:
         answers = ""
         for i in range(len(reminder[idi][msg.from_user.username])):
-            answers += msg.from_user.username + ": " + reminder[msgid][msg.from_user.username][i]
+            answers += "@" + msg.from_user.username + ": " + reminder[msgid][msg.from_user.username][i]
             if i != len(reminder[idi][msg.from_user.username]):
                 answers += "\n"
         print(answers)
