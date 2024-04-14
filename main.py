@@ -44,8 +44,8 @@ def send_message_at_time(chat_id, text, hour, minute, day, month, name, message:
     bot.send_message(chat_id, f"Вы можете найти ответы на эту встречу по этому айди: {msgid}")
     reminder[msgid] = {message.from_user.username: []}
     print(reminder)
-    thread = Thread(target=threading_sending(msg, hour, minute, day, month, chat_id, text))
-    thread.start()
+    thread1 = Thread(target=threading_sending(msg, hour, minute, day, month, chat_id, text))
+    thread1.start()
 
 
 @bot.message_handler(commands=['start'])
@@ -62,7 +62,7 @@ def handle_help(message):
     text = ("- Чтобы создать напоминалку введите через пробел /create и следуйте последующим инструкциям."
             "\n\n- Чтобы посмотреть ответы на вашу напоминалку напишите"
             " /answers + айди, который пишется при создании напоминалки"
-            " (ответы должны обязательно ссылаться на сообщение бота).")
+            " (ответы должны обязательно ссылаться на первое сообщение бота).")
     bot.send_message(chat_id, text)
 
 
@@ -168,8 +168,8 @@ def check_answers(msg):
 @bot.message_handler(commands=['answers'])
 def show_ans(msg):
     try:
-        thread = Thread(target=check_answers(msg))
-        thread.start()
+        thread2 = Thread(target=check_answers(msg))
+        thread2.start()
     except Exception as e:
         bot.send_message(msg.chat.id, "Вы не ввели ID")
 
@@ -178,4 +178,5 @@ def polling():
     bot.polling(none_stop=True)
 
 
-Thread(target=polling).start()
+polling_thread = Thread(target=polling)
+polling_thread.start()
