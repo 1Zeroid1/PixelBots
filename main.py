@@ -8,9 +8,7 @@ from telebot.types import Message
 token = ''
 bot = telebot.TeleBot(token)
 
-global user_id
 reminder = dict()
-global msgid
 
 
 def threading_sending(msg, hour, minute, day, month, chat_id, text):
@@ -137,6 +135,7 @@ def ans(message):
     (reminder[idi][message.from_user.username]).append(message.text)
     print(idi)
 
+
 def check_answers(msg):
     temp = msg.text.split()
     idi = int(temp[1])
@@ -144,7 +143,7 @@ def check_answers(msg):
         if idi in reminder:
             answers = ""
             for i in range(len(reminder[idi][msg.from_user.username])):
-                answers += "@" + msg.from_user.username + ": " + reminder[msgid][msg.from_user.username][i]
+                answers += "@" + msg.from_user.username + ": " + reminder[idi][msg.from_user.username][i]
                 if i != len(reminder[idi][msg.from_user.username]):
                     answers += "\n"
             print(answers)
@@ -154,6 +153,7 @@ def check_answers(msg):
     except Exception as e:
         bot.send_message(msg.chat.id, "Ответов нет")
 
+
 @bot.message_handler(commands=['answers'])
 def show_ans(msg):
     try:
@@ -162,7 +162,9 @@ def show_ans(msg):
     except Exception as e:
         bot.send_message(msg.chat.id, "Вы не ввели ID")
 
+
 def polling():
     bot.polling(none_stop=True)
+
 
 Thread(target=polling).start()
