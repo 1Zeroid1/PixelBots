@@ -18,7 +18,7 @@ def threading_sending(msg, hour, minute, day, month, chat_id, text):
             send_message(chat_id, text)
             del reminder[msg.id]
             break
-        time.sleep(1)
+        time.sleep(0.5)
 
 
 def send_message(chat_id, text):
@@ -59,10 +59,10 @@ def handle_start(message):
 @bot.message_handler(commands=['help'])
 def handle_help(message):
     chat_id = message.chat.id
-    text = "- Чтобы создать напоминалку введите через пробел /create, название напоминалки," \
-           " время в формате ЧЧ:ММ и дату в формате ДД.ММ.\n\n- Чтобы посмотреть ответы на вашу напоминалку напишите" \
-           " /answers + айди, который пишется при создании напоминалки" \
-           " (ответы должны обязательно ссылаться на сообщение бота)."
+    text = ("- Чтобы создать напоминалку введите через пробел /create и следуйте последующим инструкциям."
+            "\n\n- Чтобы посмотреть ответы на вашу напоминалку напишите"
+            " /answers + айди, который пишется при создании напоминалки"
+            " (ответы должны обязательно ссылаться на сообщение бота).")
     bot.send_message(chat_id, text)
 
 
@@ -88,17 +88,22 @@ def check_noti_title(message):
 def check_noti_time(message):
     chat_id = message.chat.id
     timi = message.text
-    new_time = datetime.datetime.strptime(timi, '%H:%M')
-    noti_info[chat_id]['time'] = {"hour": new_time.hour, "minute": new_time.minute}
-    print(noti_info[chat_id]['time']['hour'])
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add(
-        types.KeyboardButton("Сегодня")
-    )
-    m = bot.send_message(chat_id,
-                         "В какой день Вам напомнить? Нажмите на кнопку 'Сегодня' или введите другую дату в формате ДД.ММ",
-                         reply_markup=markup)
-    bot.register_next_step_handler(m, check_noti_date)
+    try:
+        new_time = datetime.datetime.strptime(timi, '%H:%M')
+        noti_info[chat_id]['time'] = {"hour": new_time.hour, "minute": new_time.minute}
+        print(noti_info[chat_id]['time']['hour'])
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        markup.add(
+            types.KeyboardButton("Сегодня")
+        )
+        m = bot.send_message(chat_id,
+                             "В какой день Вам напомнить? Нажмите на кнопку 'Сегодня' или введите другую дату в формате ДД.ММ",
+                             reply_markup=markup)
+        bot.register_next_step_handler(m, check_noti_date)
+    except ValueError:
+        m = bot.send_message(chat_id, "Неверный формат времени. Введите время в формате ЧЧ:ММ"
+                                      " (например, 09:00).")
+        bot.register_next_step_handler(m, check_noti_time)
 
 
 def check_noti_date(message):
@@ -109,24 +114,30 @@ def check_noti_date(message):
         day = now.day
         month = now.month
     else:
-        new_date = datetime.datetime.strptime(date, '%d.%m')
-        day = new_date.day
-        month = new_date.month
+        try:
+            new_date = datetime.datetime.strptime(date, '%d.%m')
+            day = new_date.day
+            month = new_date.month
+        except ValueError:
+            markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+            markup.add(
+                types.KeyboardButton("Сегодня")
+            )
+            m = bot.send_message(chat_id, "Неверный формат даты. Введите дату в формате ДД.ММ"
+                                          " (например, 05.12).", reply_markup=markup)
+            bot.register_next_step_handler(m, check_noti_date)
+            return
     noti_info[chat_id]['date'] = {"day": day, "math": month}
-    try:
-        send_message_at_time(
-            chat_id,
-            f"Ваше напоминание \"{noti_info[chat_id]['title']}\" сработало! Удачи Вам!",
-            noti_info[chat_id]['time']['hour'],
-            noti_info[chat_id]['time']['minute'],
-            day,
-            month,
-            noti_info[chat_id]['title'],
-            message
-        )
-    except ValueError:
-        bot.send_message(chat_id, "Неверный формат времени или даты. Введи время в формате ЧЧ:ММ"
-                                  " (например, 09:00) и дату в формате ДД.ММ (например, 05.12).")
+    send_message_at_time(
+        chat_id,
+        f"Ваше напоминание \"{noti_info[chat_id]['title']}\" сработало! Удачи Вам!",
+        noti_info[chat_id]['time']['hour'],
+        noti_info[chat_id]['time']['minute'],
+        day,
+        month,
+        noti_info[chat_id]['title'],
+        message
+    )
 
 
 @bot.message_handler(func=lambda msg: msg.reply_to_message and msg.reply_to_message.id in reminder)
