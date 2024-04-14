@@ -44,7 +44,7 @@ def send_message_at_time(chat_id, text, hour, minute, day, month, name, message:
     bot.send_message(chat_id, f"Вы можете найти ответы на эту встречу по этому айди: {msgid}")
     reminder[msgid] = {message.from_user.username: []}
     print(reminder)
-    thread1 = Thread(target=threading_sending(msg, hour, minute, day, month, chat_id, text))
+    thread1 = Thread(target=lambda: threading_sending(msg, hour, minute, day, month, chat_id, text))
     thread1.start()
 
 
