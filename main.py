@@ -143,22 +143,31 @@ def check_noti_date(message):
 @bot.message_handler(func=lambda msg: msg.reply_to_message and msg.reply_to_message.id in reminder)
 def ans(message):
     idi = message.reply_to_message.id
-    (reminder[idi][message.from_user.username]).append(message.text)
-    print(idi)
+    if reminder[idi].get(message.from_user.username, False) is False:  # если в словаре нет такого ключа
+        reminder[idi][message.from_user.username] = [message.text]  # добавляем его и помещает туда список с одним значением
+    else:  # если такой ключ уже есть
+        reminder[idi][message.from_user.username].append(message.text)  # добавляем значение в конец списка
 
 
 def check_answers(msg):
     temp = msg.text.split()
     idi = int(temp[1])
+    users = []
+    for x in reminder[idi]:
+        users.append(x)
+    print(users)
+    print(reminder)
     try:
         if idi in reminder:
             answers = ""
-            for i in range(len(reminder[idi][msg.from_user.username])):
-                answers += "@" + msg.from_user.username + ": " + reminder[idi][msg.from_user.username][i]
-                if i != len(reminder[idi][msg.from_user.username]):
-                    answers += "\n"
-            print(answers)
-            bot.send_message(msg.chat.id, answers)
+            for j in range(len(users)):
+                temp = users[j]
+                for i in range(len(reminder[idi][temp])):
+                    answers += "@" + temp + ": " + reminder[idi][temp][i]
+                    if i != len(reminder[idi][temp]):
+                        answers += "\n"
+                print(answers)
+                bot.send_message(msg.chat.id, answers)
         else:
             bot.send_message(msg.chat.id, "Данный айди не найден.")
     except Exception as e:
@@ -168,6 +177,8 @@ def check_answers(msg):
 @bot.message_handler(commands=['answers'])
 def show_ans(msg):
     try:
+        temp = msg.text.split()
+        idi = int(temp[1])
         thread2 = Thread(target=check_answers(msg))
         thread2.start()
     except Exception as e:
